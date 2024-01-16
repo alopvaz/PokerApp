@@ -23,8 +23,11 @@ function Login({ authenticate, isAuthenticated }) {
       if (res.data === 'OK') {
         const resRol = await axios.get('http://localhost:3000/rol', { withCredentials: true });
         const resNombre = await axios.get('http://localhost:3000/nombre', { withCredentials: true });
+        const resId = await axios.get('http://localhost:3000/id', { withCredentials: true }); // Nueva línea
+
+
         setRol(resRol.data.trim().toLowerCase());
-        authenticate(resRol.data.trim().toLowerCase(), resNombre.data);
+        authenticate(resRol.data.trim().toLowerCase(), resNombre.data, resId.data); // Modificado para incluir el ID
       } else {
         console.error('Credenciales incorrectas');
       }

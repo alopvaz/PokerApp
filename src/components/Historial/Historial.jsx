@@ -7,21 +7,54 @@ import { CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 
 
 
-const Tabla = () => {
+const Historial = () => {
 
-  
-  const [selectedTareaKeys, setSelectedTareaKeys] = useState([]);
-const [searchTareaVisible, setSearchTareaVisible] = useState(false);
-const [filteredTareas, setFilteredTareas] = useState([]);
 
-const tareaRowSelection = {
-  selectedTareaKeys,
-  onChange: (selectedTareaKeys) => {
-    setSelectedTareaKeys(selectedTareaKeys);
+
+  const [selectedTarea, setSelectedTarea] = useState(null);
+
+
+  const [votaciones, setVotaciones] = useState([]);
+ 
+
+
+
+
+
+
+
+
+
+  const [votacionesData, setVotacionesData] = useState([]);
+const [votacionesVisible, setVotacionesVisible] = useState(false);
+
+
+const votacionesColumns = [
+  {
+    title: 'Nombre del usuario',
+    dataIndex: 'nombre', // Cambia 'id_participante' a 'nombre'
+    key: 'nombre', // Cambia 'id_participante' a 'nombre'
   },
-};
+  {
+    title: 'Votación',
+    dataIndex: 'votacion',
+    key: 'votacion',
+  },
+];
+  
+const [selectedTareaKeys, setSelectedTareaKeys] = useState([]);  const [searchTareaVisible, setSearchTareaVisible] = useState(false);
+  const [filteredTareas, setFilteredTareas] = useState([]);
+
+
+
 
   const [tareas, setTareas] = useState([]);
+
+  
+  const tareasData = tareas.map((tarea, index) => ({
+    key: index, // Utiliza el índice como clave. Asegúrate de que cada tarea tiene una clave única.
+    ...tarea,
+  }));
 
   
   const [searchVisible, setSearchVisible] = useState(false);
@@ -50,6 +83,20 @@ const sortData = (data, columnKey, order) => {
 };
 
 const sortedData = sortData(historialData, sortedColumn, sortOrder);
+const tareaRowSelection = {
+  selectedTareaKeys,
+  getCheckboxProps: (record) => ({
+    disabled: record.key === 'nuevo', // Desactiva el checkbox para la fila "+ Nuevo"
+  }),
+  onChange: (selectedTareaKeys, selectedRows) => {
+    setSelectedTareaKeys(selectedTareaKeys);
+    if (selectedRows.length > 0) {
+      setSelectedTarea(selectedRows[selectedRows.length - 1].id); // Establece selectedTarea al id de la última tarea seleccionada
+    } else {
+      setSelectedTarea(null);
+    }
+  },
+};
 
 
 
@@ -76,14 +123,7 @@ const handleSort = (columnKey) => {
 
 // Declare 'data' only once
 
-
-  const onSelectChange = selectedRowKeys => {
-    setSelectedRowKeys(selectedRowKeys);
-  };
-
-  
-
-  const showModal = () => {
+  const showModal = () => {tareaRowSelection 
     setIsModalVisible(true);
   };
 
@@ -227,9 +267,25 @@ const handleSort = (columnKey) => {
   },
 ];
 
+
 const handleTareaViewClick = () => {
-  // Implementa la funcionalidad de vista aquí
-}
+  setVotacionesVisible(true);
+  axios.get(`http://localhost:3000/votaciones/${selectedTarea}`)
+  .then(res => {
+    setVotaciones(res.data); // Guarda las votaciones en el estado
+    const votacionesData = res.data.map((votacion, index) => ({
+      key: index, // Utiliza el índice como clave. Asegúrate de que cada votación tiene una clave única.
+      ...votacion,
+    }));
+    setVotacionesData(votacionesData); // Guarda los datos mapeados en el estado
+    console.log(selectedTarea);
+
+  })
+  .catch(err => {
+    console.error(err);
+  });
+};
+
 
 const handleTareaEditClick = () => {
   // Implementa la funcionalidad de edición aquí
@@ -314,7 +370,7 @@ return (
               style={{ marginTop: '-48px' }}
               rowSelection={tareaRowSelection} 
               columns={tareasColumns} 
-              dataSource={tareas}
+              dataSource={tareasData}
               rowClassName={(record) => record.key === 'nuevo' ? 'new-row' : (selectedTareaKeys.includes(record.key) ? 'selected-row' : '')}
               pagination={{
                 pageSize: 8,
@@ -327,6 +383,13 @@ return (
               size="small"
             />
           </div>
+
+          {votacionesVisible && (
+  <Table 
+    columns={votacionesColumns} 
+    dataSource={votacionesData} 
+  />
+)}
         </div>
       </div>
     </div>
@@ -334,4 +397,4 @@ return (
 );
 };
 
-export default Tabla;
+export default Historial;

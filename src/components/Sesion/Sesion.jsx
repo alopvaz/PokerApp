@@ -11,8 +11,10 @@ import { useLocation } from 'react-router-dom';
 const socket = io('http://localhost:3000');
 
 // Componente Sesion
-function Sesion({ rol, nombre}) {
-  
+function Sesion({ rol, nombre, userId }) {
+
+  console.log("El id del usaurio es: " + userId);
+
   const [estimacion, setEstimacion] = useState('');
 const [idSesion, setIdSesion] = useState('');
 
@@ -32,12 +34,13 @@ const handleCloseModal = () => setShowModal(false);
   const [tarea, setTarea] = useState('No hay tarea seleccionada');
   const [nuevaTarea, setNuevaTarea] = useState('');
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [cartas, setCartas] = useState([{ nombre: nombre, carta: '' }]);
-  const [cartaSeleccionada, setCartaSeleccionada] = useState(null);
+  
+  const [cartas, setCartas] = useState([{ nombre: nombre, carta: '', userId: userId }]);  const [cartaSeleccionada, setCartaSeleccionada] = useState(null);
   const [cartasSeleccionadas, setCartasSeleccionadas] = useState([]);
   const [revelarCartas, setRevelarCartas] = useState(false)
 
   useEffect(() => {
+    
 
     const handleIniciarTarea = () => {
       setTarea('No hay tarea seleccionada');
@@ -55,12 +58,11 @@ const handleNuevaTarea = (data) => {
   setIdSesion(data.idSesion);
 };
 
-    const handleNuevaCarta = (nombre, carta) => {
-      if (!cartas.some((carta) => carta.nombre === nombre)) {
-        setCartas((cartas) => [...cartas, { nombre, carta }]);
-      }
-    };
-
+const handleNuevaCarta = (data) => {
+  if (!cartas.some((carta) => carta.nombre === data.nombre)) {
+    setCartas((cartas) => [...cartas, { nombre: data.nombre, carta: data.carta, userId: data.userId }]);
+  }
+};
     const handleCartaSeleccionada = (nombre, carta) => {
       setCartasSeleccionadas((prevState) => ({ ...prevState, [nombre]: carta }));
     };
@@ -91,9 +93,7 @@ const handleNuevaTarea = (data) => {
 
 
     // Emite la carta inicial del usuario
-    handleAddCarta(nombre, 'A♠');
-    console.log('Usuario conectado:', nombre);
-
+handleAddCarta(nombre, 'A♠', userId);
 
     return () => {
       socket.off('nueva-tarea', handleNuevaTarea);
@@ -154,16 +154,14 @@ const handleAddTarea = () => {
       socket.emit('carta-seleccionada', nombre, carta);
     }
   };
-  const handleAddCarta = (nombre, carta) => {
-    socket.emit('nueva-carta', nombre, carta);
+  const handleAddCarta = (nombre, carta, userId) => {
+    socket.emit('nueva-carta', nombre, carta, userId);
   };
 
   const handleCrearTarea = () => {
-    // Recoge los valores de los campos del formulario
     var nombre = tarea;
     var estimacion = cartaReveladaSeleccionada;
   
-    // Envía una solicitud POST a la ruta '/crear-tarea' en el servidor
     fetch('http://localhost:3000/crear-tarea', {
       method: 'POST',
       headers: {
@@ -171,28 +169,50 @@ const handleAddTarea = () => {
       },
       body: JSON.stringify({ nombre, estimacion, sesionId }),
     })
-      .then(response => response.text())
+      .then(response => response.json()) // Cambia esto a response.json()
       .then(data => {
-        alert(data); // Muestra un mensaje con la respuesta del servidor
+        console.log(data.message);
+        let tareaId = data.tareaId;
+        
+        for (let usuario in cartasSeleccionadas) {
+          let votacion = cartasSeleccionadas[usuario];
+          let usuarioId = cartas.find(carta => carta.nombre === usuario).userId; // Obtén el ID del usuario
+        
+          console.log(`Enviando votación: usuarioId=${usuarioId}, tareaId=${tareaId}, votacion=${votacion}`);
+        
+          fetch('http://localhost:3000/guardar-votacion', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ usuarioId, tareaId, votacion }), // Utiliza el ID del usuario
+          })
+          .then(response => response.text())
+          .then(data => {
+            console.log(data);
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+          });
+        }
   
-        // Restablece el estado del componente
         setTarea('No hay tarea seleccionada');
         setCartaReveladaSeleccionada(null);
         setCartasSeleccionadas({});
         setRevelarCartas(false);
   
-        // Cierra el modal
         handleCloseModal();
   
-        // Emitir un evento al servidor para notificar cambios a otros clientes
         socket.emit('iniciar-tarea');
+        
       })
       .catch((error) => {
         console.error('Error:', error);
       });
   };
-  
 
+
+  
   return (
     <div>
        <div id='superior' className='navbar'>
@@ -248,8 +268,10 @@ const handleAddTarea = () => {
         {revelarCartas ? (cartasSeleccionadas[usuario.nombre] || '?') : ''}
       </Card.Body>
     </Card>
-    <p className="text-black">{usuario.nombre}</p>
-  </Col>
+    <p className="text-black">
+  {usuario.nombre}
+  {rol === 'admin' &&`(${usuario.userId})`}
+</p>  </Col>
 ))}
           </Row>
         </Container>
@@ -300,7 +322,7 @@ const handleAddTarea = () => {
           <Button variant="secondary" onClick={handleCloseModal}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={() => { handleCrearTarea();}}>
+          <Button variant="primary" onClick={() => { handleCrearTarea(); }}>            
             Aceptar
           </Button>
         </Modal.Footer>

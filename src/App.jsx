@@ -14,11 +14,13 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [rol, setRol] = useState('');
   const [nombre, setNombre] = useState('');
+  const [userId, setUserId] = useState('');
 
-  const authenticate = (rol, nombre) => {
+  const authenticate = (rol, nombre, id) => {
     setIsAuthenticated(true);
     setRol(rol);
     setNombre(nombre);
+    setUserId(id); // Añade esta línea
   };
 
   useEffect(() => {
@@ -30,24 +32,23 @@ function App() {
 
   return (
     <Router>
-    <Routes>
-      <Route path="/" element={<Historial />} />
-      <Route path="/login" element={<Login authenticate={authenticate} isAuthenticated={isAuthenticated} />} />
-      <Route path="/*" element={
-        isAuthenticated ? (
-          <Layout>
-            <Content style={{ overflow: 'auto', height: '100vh' }}>
+      <Routes>
+        <Route path="/" element={<Login authenticate={authenticate} isAuthenticated={isAuthenticated} />} />
+        <Route path="/*" element={
+          isAuthenticated ? (
+            <Layout>
+              <Content style={{ overflow: 'auto', height: '100vh' }}>
                 <Routes>
                   <Route path="/historial" element={<Historial />} />
                   <Route path="/principal" element={<Principal rol={rol} />} />
-                  <Route path="/sesion" element={<Sesion rol={rol} nombre={nombre} />} />
+                  <Route path="/sesion" element={<Sesion rol={rol} nombre={nombre} userId={userId} />} />                
                 </Routes>
               </Content>
-          </Layout>
-        ) : null
-      }/>
-    </Routes>
-  </Router>
+            </Layout>
+          ) : null
+        }/>
+      </Routes>
+    </Router>
   );
 }
 

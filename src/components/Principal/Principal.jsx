@@ -49,6 +49,10 @@ function Principal({ rol }) {
     }
   }
 
+  const irAHistorial = () => {
+    navigate('/historial');
+  }
+
   return (
     <div className={styles.body}>
       <div className={styles.box}>
@@ -56,7 +60,9 @@ function Principal({ rol }) {
         <form onSubmit={(e) => e.preventDefault()}>
           {rol === 'admin' ? (
             <>
-              <h1 className={styles.h1}>POKER<span className={styles.span}>UNITED</span></h1>       
+              <h1 className={styles.h1}>POKER<span className={styles.span}>UNITED</span></h1>  
+              <button onClick={irAHistorial} style={{color: 'white'}}>Ir a Historial</button> {/* Botón para ir a Historial */}
+     
               <h2>Nueva Sesión</h2>
               <div className={styles.inputBox}>
                 <input 
@@ -69,6 +75,7 @@ function Principal({ rol }) {
                 <i></i>
               </div>
               <input type="submit" value="Entrar" onClick={entrar} />
+              <button onClick={irAHistorial}>Ir a Historial</button> {/* Botón para ir a Historial */}
             </>
           ) : (
             sesionDisponible ? (
@@ -84,6 +91,7 @@ function Principal({ rol }) {
                   onClick={entrar} 
                   className={styles.centeredButton}
                 />
+                <button onClick={irAHistorial}>Ir a Historial</button> {/* Botón para ir a Historial */}
               </>
             ) : (
               <>
